@@ -1,7 +1,9 @@
 <!DOCTYPE HTML>
 <html>
 <head>
-<title>CEAM</title>
+<title>Controle de Estoque Avan&ccedil;ado Mobile</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /> 
+	
 	<script type="text/javascript" charset="utf-8" src="../js/cordova-1.8.1.js"></script>
 
 
@@ -11,7 +13,62 @@
 	<script src="../js/barcodescanner.js"></script>
 	
 	<script type="text/javascript">
-	// Paste hear your javascript source
+	// Paste hear your javascript source code
+	
+	function carregaLocalizacoes(){
+		
+		$.getJSON('http://fierce-stone-2600.herokuapp.com/localizacaos.json', 
+	  			function(data) {
+
+	  		
+	  			    
+	  			    var list = $('#list');
+	  			    list.html("");
+	  				$.each(data, function(key, val) {
+	  				    
+	    				 list.append(
+	      				  $(document.createElement('li')).html(val.descricao)
+	    				);
+	    				
+
+	  				});
+	  				
+	  				
+	  				list.listview("destroy").listview()
+
+				});
+		
+	}
+	
+	$( function() {
+
+		$('#buttonLocaliza').click(function() {
+			
+			carregaLocalizacoes();
+  			
+		});
+		
+		
+			 $('#cadastrar').click(function(){
+
+			 // Pega o valor dos inputs
+			 var desc = $('#descricao').val();
+			
+		
+			 $.post('http://fierce-stone-2600.herokuapp.com/localizacaos', {"localizacao[descricao]": desc}, function(data){
+			   /* alert(data) */
+			   		
+				 carregaLocalizacoes();
+			   
+			   },"html"
+			  ); // Fim do POST
+			 }); // Fim do Click
+			
+
+
+  	    
+	} );
+	
 	</script>  
   
 </head>
@@ -23,14 +80,34 @@
 	    <h1>CEAM</h1> 
 	  </div> 
  
-	  <div data-role="content">
-	    <p> Controle de Estoque Avan&ccedil;ado Mobile </p>
-	    <p><a href="#linkLogalicades" data-role="button">Cadastro de Localidades</a></p>  
-	    <p><a href="#linkOrganizacao" data-role="button">Organizar Estoque</a></p>  
+	  <div data-role="content" id="content">
+	  
+	    <p><a href="#localizacoes"  data-role="button" id="buttonLocaliza">Cadastro de Localidades</a></p>  
+	    <p><a href="#linkOrganizacao" data-role="button" id="linkOrganizacao">Organizar Estoque</a></p>  
 	    <p><a href="#linkPesquisaMercadorias" data-role="button">Pesquisa de Mercadorias</a></p>
+	   
 	  </div> 
- 
-	</div> 
+	  
+	 </div>
+	  
+	  <div data-role="page" id="localizacoes">
+	  
+	  	<div data-role="header"> 
+	    	<h1>CEAM</h1> 
+	    	<div class="ui-body ui-body-b"> 
+	    		<input type="text" name="descricao" id="descricao" value="" placeholder="Descrição"/>
+		     	<button type="submit" data-theme="a" id="cadastrar">Adicionar</button> 
+	    	</div>
+	  	</div> 
+	  
+	     <div data-role="content">
+	     	<ul data-role="listview" id="list"> 
+      
+    		</ul> 
+	 	 </div> 
+	  </div>
+
+
  
 </body>
 </html>
