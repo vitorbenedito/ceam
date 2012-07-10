@@ -14,22 +14,57 @@
 	
 	<script type="text/javascript">
 	
+	var itemEditado = null;
+	
+	var itens = new Array();
+	
+	//var urlCeamWeb = "http://ceam.herokuapp.com/";
+	
+	var urlCeamWeb = "http://10.0.2.2:3000/";
+	
 	function carregaLocalizacoes(){
 		
-		$.getJSON('http://ceam.herokuapp.com/localizacaos.json', 
+		$.getJSON( urlCeamWeb + 'localizacaos.json', 
 	  			function(data) {
 
-	  			    var list = $('#list');
+	  			    var list = $('#listLocalizacao');
 	  			    list.html("");
 	  				$.each(data, function(key, val) {
 	  				    
+	  					var html ='<a href="#detalheLocalizacao" data-rel="dialog" data-transition="pop" onclick="loadProdutos(' + val.id + ')" ><b>' + val.descricao + '</b></a> ';
+	  					 
 	    				 list.append(
-	      				  $(document.createElement('li')).html(val.descricao)
+	      				  $(document.createElement('li')).html(html)
 	    				);
 	    				
 	  				});
 	  				
-	  				list.listview("destroy").listview()
+	  				list.listview("destroy").listview();
+	  			
+
+				});
+		
+	}
+	
+	function loadProdutos(id)
+	{
+		
+		$.getJSON( urlCeamWeb + 'localizacaos/' + id + '.json', 
+	  			function(data) {
+
+	  			    var list = $('#listDetalheLocalizacao');
+	  			    list.html("");
+	  				$.each(data, function(key, val) {
+
+	    				 list.append(
+	      				  $(document.createElement('li')).html(val.nomeProduto)
+	    				);
+	    				
+	  				});
+	  				
+	  				list.listview("destroy").listview();
+	  				
+
 
 				});
 		
@@ -38,7 +73,7 @@
 	function carregarComboLocalizacao(){
 		
 
-		    $.getJSON('http://ceam.herokuapp.com/localizacaos.json', 
+		    $.getJSON( urlCeamWeb + 'localizacaos.json', 
 	  			function(data) {
 					
 			 		 var combo = $('#comboLocalizacao');
@@ -54,46 +89,171 @@
 		
 	}
 	
-	function cadastrarLocalizacao(){
+	function salvarOrganizacao(){
 		
-		// Pega o valor dos inputs
+		var localizacao =  $('#comboLocalizacao').val();
+		
+		for(i=0;i<itens.length;i++){
+		
+			 var value = itens[i+1];
+			 if(value != undefined){
+				
+				 $.post( urlCeamWeb + 'produtos', {"produto[idProduto]": value.id,"produto[localizacao_id]": localizacao}, function(data){
+				   /* alert(data) */
+				   		
+				   
+				   },"html"
+				  ); // Fim do POST
+		 	 }
+			 
+		}
+		
+		alert('Registro salvo com sucesso !');
+		
+		$('#listCodigos').empty();
+		itens = new Array();
+		itemEditado = null;
+		
+		
+	}
+	
+	function salvarBalancoInventario(){
+		
+		var nomeBalanco =  $('#nomeBalanco').val();
+		
+		var produtosAferidos = new Array();
+		
+		var count = 0;
+		
+		for(i=0;i<itens.length;i++){
+			
+			 var value = itens[i+1];
+			 
+			 if(value != undefined){
+				 
+				 produtosAferidos[count] = {idProduto: value.id,qtdeAferida:value.qtdeAferida};
+				 
+				 count++;
+				 
+			 }
+		}
+		
+		var balancoJson = { "balanco[nome]": nomeBalanco, "balanco[produto_aferidos_attributes]": produtosAferidos };
+					
+		$.post( urlCeamWeb + 'balancos.json', balancoJson, function(data){
+				   /* alert(data) */
+				   		
+				   
+			},"json"
+		); // Fim do POST
+				  
+		alert('Registro salvo com sucesso !');
+			 
+	}
+	
+	function cadastrarLocalizacao(){
+
 		 var desc = $('#descricao').val();
 		
 	
-		 $.post('http://ceam.herokuapp.com/localizacaos', {"localizacao[descricao]": desc}, function(data){
-		   /* alert(data) */
+		 $.post( urlCeamWeb + 'localizacaos', {"localizacao[descricao]": desc}, function(data){
 		   		
 			 carregaLocalizacoes();
 		   
 		   },"html"
-		  ); // Fim do POST
+		  );
+		  
+		 alert('Registro salvo com sucesso !');
 		
 	}
 	
-	function scanear(){
+	function excluirLinha(id)
+	{
 		
-		 window.plugins.barcodeScanner.scan( function(result) { 
+		$("#" + id).remove();
+		itens.remove(id);
+		
+	}
+	
+	function setarItemEditado(id)
+	{
+		itemEditado = itens[id];
+		if(itemEditado != null && itemEditado.qtdeAferida != null)
+		{
+			$("#qtdeAferida").val(itemEditado.qtdeAferida);
+		}
+	}
+	
+	function inserirQuantidadeAferida()
+	{
+		var qtde = $("#qtdeAferida").val();
+		$("#" + itemEditado.id).append('<span class="ui-li-count">'+qtde+'</span>');
+		$("#aferirEstoque").dialog("close");
+		$('#listBalancoInventario').listview("destroy").listview();
+		itemEditado.qtdeAferida = qtde;
+		$("#qtdeAferida").val('');
+	}
+	
+	function scanearOrganizacao(){
+		
+		   /* window.plugins.barcodeScanner.scan( function(result) {  */
 
-			$.getJSON('https://www.vpsa.com.br/estoque/rest/externo/showroom/1/produtos/'+result.text, 
+			 /*  $.getJSON('https://www.vpsa.com.br/estoque/rest/externo/showroom/1/produtos/'+result.text,   */
+		 $.getJSON('https://www.vpsa.com.br/estoque/rest/externo/showroom/1/produtos/193', 
 		  	function(data) {
-				var list = $('#listCodigos');
+				 
+				 var list = $('#listCodigos');
 
-				list.append(
-		      			  $(document.createElement('li')).html(data.descricao)
-		    	);
-				
-				list.listview("destroy").listview()
+					//var html ='<a href="#aferirEstoque" onclick="setarItemEditado('+data.id+')" data-rel="dialog" data-transition="pop">' + data.descricao + ' - <span style="color:green;"><b>'+data.quantidadeEmEstoque+'</b></span></a> ';
+					var html = '<a>' + data.descricao + '</a>';
+					html += '<a onclick="excluirLinha( '+ data.id +' );">Excluir</a>';
+					list.append(
+			      			  $(document.createElement('li')).attr('id',data.id).html( html )
+			    	);
+					list.listview("destroy").listview();
+
+					itens[data.id] = data;
 				
 			});
 	        
-	     }, function(error) {
+	        /* }, function(error) {
 	        alert("Scanning failed: " + error);
-	    }
-		); 
+	    }  
+		);    */
+		
+	}
+	
+	function scannerBalancoInventario(){
+		
+		   /* window.plugins.barcodeScanner.scan( function(result) {  */
+
+			 /*  $.getJSON('https://www.vpsa.com.br/estoque/rest/externo/showroom/1/produtos/'+result.text,   */
+		 $.getJSON('https://www.vpsa.com.br/estoque/rest/externo/showroom/1/produtos/193', 
+		  	function(data) {
+				 
+				 var list = $('#listBalancoInventario');
+
+					var html ='<a href="#aferirEstoque" onclick="setarItemEditado('+data.id+')" data-rel="dialog" data-transition="pop">' + data.descricao + ' - <span style="color:green;"><b>'+data.quantidadeEmEstoque+'</b></span></a> ';
+					html += '<a onclick="excluirLinha( '+ data.id +' );">Excluir</a>';
+					list.append(
+			      			  $(document.createElement('li')).attr('id',data.id).html( html )
+			    	);
+					list.listview("destroy").listview();
+
+					itens[data.id] = data;
+				
+			});
+	        
+	        /* }, function(error) {
+	        alert("Scanning failed: " + error);
+	    }  
+		);    */
 		
 	}
 	
 	$( function() {
+		
+		this.itens = [];
 		
 		$('#buttonLocaliza').click(function() {
 			carregaLocalizacoes();
@@ -107,8 +267,24 @@
 			cadastrarLocalizacao();
 		});
 		
-		$('#scannerButton').click(function(){
-			scanear();
+		$('#scannerOrganizacaoButton').click(function(){
+			scanearOrganizacao();
+		});
+		
+		$('#scannerBalancoInventario').click(function(){
+			scannerBalancoInventario();
+		});
+		
+		$('#salvarOrganizacao').click(function(){
+			salvarOrganizacao();
+		});
+		
+		$('#salvarBalancoInventario').click(function(){
+			salvarBalancoInventario();
+		});
+		
+		$('#buttonCancelar').click(function(){
+			$("#aferirEstoque").dialog("close");
 		});
   	    
 	} );
@@ -126,15 +302,15 @@
  
 	  <div data-role="content" id="content">
 	  
-	    <p><a href="#localizacoes"  data-role="button" id="buttonLocaliza" data-back="true" data-transition="slide">Cadastro de Localidades</a></p>  
-	    <p><a href="#scanner" data-role="button" id="buttonScanner" data-back="true" data-transition="slide">Organizar Estoque</a></p>  
-	    <p><a href="#linkPesquisaMercadorias" data-role="button">Pesquisa de Mercadorias</a></p>
+	    <p><a href="#divLocalizacaoes"  data-role="button" id="buttonLocaliza" data-back="true" data-transition="slide">Cadastro de Localidades</a></p>  
+	    <p><a href="#divOrganizacaoEstoque" data-role="button" id="buttonScanner" data-back="true" data-transition="slide">Organizar Estoque</a></p>  
+	    <p><a href="#divBalancoInventario" data-role="button">Balanço de Inventário</a></p>
 	   
 	  </div> 
 	  
 	 </div>
 	  
-	  <div data-role="page" id="localizacoes">
+	  <div data-role="page" id="divLocalizacaoes">
 	  
 	  	<div data-role="header"> 
 	    	<h1>CEAM</h1> 
@@ -146,18 +322,34 @@
 	  	</div> 
 	  
 	     <div data-role="content">
-	     	<ul data-role="listview" id="list"> 
+	     	<ul data-role="listview" id="listLocalizacao"> 
       
     		</ul> 
 	 	 </div> 
 	  </div>
 	  
-	  <div data-role="page" id="scanner">
+	  <div data-role="page" id="detalheLocalizacao">
+	  
+	  	<div data-role="header"> 
+	    	<h1>CEAM</h1> 
+	  	</div> 
+	  
+	     <div data-role="content">
+	     	<ul data-role="listview" id="listDetalheLocalizacao"> 
+      
+    		</ul> 
+	 	 </div> 
+	 	 <div data-role="footer">
+		     	<a data-role="button" data-theme="b" data-icon="delete" data-inline="true" onclick="$('#detalheLocalizacao').dialog('close');">Fechar</a> 
+	    </div>
+	  </div>
+	  
+	  <div data-role="page" id="divOrganizacaoEstoque">
 	  
 	  	<div data-role="header"> 
 	    	<h1>CEAM</h1> 
 	    	<div class="ui-body ui-body-b"  align="center"> 
-		     	<a id="scannerButton" data-role="button" data-theme="b" data-icon="plus" data-inline="true">Escanear</a> 
+		     	<a id="scannerOrganizacaoButton" data-role="button" data-theme="b" data-icon="plus" data-inline="true">Escanear</a> 
 		     	<a id="salvarOrganizacao" data-role="button" data-theme="b" data-icon="check" data-inline="true">Salvar</a> 
 	    	</div>
 	  	</div> 
@@ -168,13 +360,54 @@
 			</div>
 	     <div data-role="content">
 	     	<div>
-	     		<ul data-role="listview" id="listCodigos"> 
+	     		<ul data-role="listview" data-split-theme="d" data-split-icon="delete" data-count-theme="b" id="listCodigos"> 
       
     			</ul>
     		</div>
     		
 	 	 </div> 
 	  </div>
+	  
+	  <div data-role="page" id="divBalancoInventario">
+	  
+	  	<div data-role="header"> 
+	    	<h1>CEAM</h1> 
+	    	<div class="ui-body ui-body-b"  align="center"> 
+		     	<a id="scannerBalancoInventario" data-role="button" data-theme="b" data-icon="plus" data-inline="true">Escanear</a> 
+		     	<a id="salvarBalancoInventario" data-role="button" data-theme="b" data-icon="check" data-inline="true">Salvar</a> 
+	    	</div>
+	  	</div> 
+	  	<div data-role="fieldcontain">
+	  			<label for="basic">Nome:</label>
+   				 <input type="text" name="nomeBalanco" id="nomeBalanco" value=""  />
+			</div>
+	     <div data-role="content">
+	     	<div>
+	     		<ul data-role="listview" data-split-theme="d" data-split-icon="delete" data-count-theme="b" id="listBalancoInventario"> 
+      
+    			</ul>
+    		</div>
+    		
+	 	 </div> 
+	  </div>
+	  
+	  <div data-role="page" id="aferirEstoque">
+	  
+	  	<div data-role="header"> 
+	    	<h1>CEAM</h1> 
+	  	</div> 
+	     <div data-role="content">
+			
+			<label for="basic">Quantidade Aferida:</label>
+  		    <input type="text" name="qtdeAferida" id="qtdeAferida" value=""  />
+    		
+	 	 </div> 
+	 	 <div data-role="footer">
+		     	<a id="buttonAferir" data-role="button" data-theme="b" data-icon="check" data-inline="true" onclick="inserirQuantidadeAferida();">Confirmar</a> 
+		     	<a id="buttonCancelar" data-role="button" data-theme="b" data-icon="delete" data-inline="true">Cancelar</a> 
+	    </div>
+	  </div>
+	 
 
 
  
