@@ -25,11 +25,11 @@
 	
 	var carregouProdutosPesquisa = false;
 	
-	//var urlCeamWeb = "http://ceam.herokuapp.com/";
+	var urlCeamWeb = "http://ceam.herokuapp.com/";
 	
 	var urlVpsa = "https://www.vpsa.com.br/estoque/rest/externo/showroom/1/"; 
 	
-	var urlCeamWeb = "http://10.0.2.2:3000/";
+	//var urlCeamWeb = "http://10.0.2.2:3000/";
 	
 	function carregaLocalizacoes(){
 		
@@ -183,13 +183,6 @@
 		
 		var localizacao =  $('#comboLocalizacao').val();
 		
-		if(localizacao == '')
-		{
-			alert('Informe um nome para a localização');
-			return;
-		}
-			
-		
 		for(i=0;i<itens.length;i++){
 		
 			 var value = itens[i+1];
@@ -266,6 +259,11 @@
 
 		 var desc = $('#descricao').val();
 		
+		 if(desc == '')
+		 {
+			alert('Informe um nome para a localização');
+			return;
+		 }
 	
 		 $.post( urlCeamWeb + 'localizacaos', {"localizacao[descricao]": desc}, function(data){
 		   		
@@ -308,8 +306,12 @@
 	function scanearOrganizacao(){
 		
 		 window.plugins.barcodeScanner.scan( function(result) { 
-
-			 insereProdutoOrganizacao(result.text);
+			
+			 if(result != null && result.text != '')
+			 {
+			 	insereProdutoOrganizacao(result.text);
+			 	scanearOrganizacao();
+			 }
 	        
 	        }, function(error) {
 	        alert("Scanning failed: " + error);
@@ -360,8 +362,11 @@
 	function scannerBalancoInventario(){
 		
 		window.plugins.barcodeScanner.scan( function(result) { 
-	        
-			insereProdutoAferimento(result.text);
+			if(result != null && result.text != '')
+			{
+				insereProdutoAferimento(result.text);
+				scannerBalancoInventario();
+			}
 			
 	    }, function(error) {
 	        alert("Scanning failed: " + error);
