@@ -8,6 +8,7 @@
 
 
 	<link rel="stylesheet" href="../css/jquery.mobile-1.1.0.css" /> 
+	<link rel="stylesheet" href="../css/ceam.css" /> 
 	<script src="../js/jquery-1.7.2.js"></script> 
 	<script src="../js/jquery.mobile-1.1.0.js"></script>
 	<script src="../js/barcodescanner.js"></script>
@@ -18,7 +19,15 @@
 	
 	var itens = new Array();
 	
+	var carregouProdutosOrganizacao = false;
+	
+	var carregouProdutosAferimento = false;
+	
+	var carregouProdutosPesquisa = false;
+	
 	//var urlCeamWeb = "http://ceam.herokuapp.com/";
+	
+	var urlVpsa = "https://www.vpsa.com.br/estoque/rest/externo/showroom/1/"; 
 	
 	var urlCeamWeb = "http://10.0.2.2:3000/";
 	
@@ -31,7 +40,7 @@
 	  			    list.html("");
 	  				$.each(data, function(key, val) {
 	  				    
-	  					var html ='<a href="#detalheLocalizacao" data-rel="dialog" data-transition="pop" onclick="loadProdutos(' + val.id + ')" ><b>' + val.descricao + '</b></a> ';
+	  					var html ='<a href="#detalheLocalizacao" data-rel="dialog" data-transition="pop" onclick="loadProdutos(' + val.id + ');" ><b>' + val.descricao + '</b></a> ';
 	  					 
 	    				 list.append(
 	      				  $(document.createElement('li')).html(html)
@@ -49,11 +58,15 @@
 	function loadProdutos(id)
 	{
 		
+		var list = $('#listDetalheLocalizacao');
+		list.html("");
+		list.append(
+			$(document.createElement('li')).html("carregando...")
+		);
+		
 		$.getJSON( urlCeamWeb + 'localizacaos/' + id + '.json', 
 	  			function(data) {
-
-	  			    var list = $('#listDetalheLocalizacao');
-	  			    list.html("");
+					list.html("");
 	  				$.each(data, function(key, val) {
 
 	    				 list.append(
@@ -62,7 +75,7 @@
 	    				
 	  				});
 	  				
-	  				list.listview("destroy").listview();
+	  				list.listview("refresh");
 	  				
 
 
@@ -77,6 +90,7 @@
 	  			function(data) {
 					
 			 		 var combo = $('#comboLocalizacao');
+			 		combo.html('');
 					 var combos = "";
 		             $.each(data, function(key, val){
 		            	combos = combos + "<option value='" + val.id + "' >" + val.descricao + "</option>";
@@ -89,9 +103,92 @@
 		
 	}
 	
+	function carregarProdutosVpsaOrganizacao(){
+		
+		
+		if(!carregouProdutosOrganizacao)
+		{
+			carregarProdutos("insereProdutoOrganizacao",carregouProdutosOrganizacao,"#listProdutos");
+			carregouProdutosOrganizacao = true;
+		}
+	
+	}
+	
+	function carregarProdutosVpsaPesquisa(){
+		if(!carregouProdutosPesquisa)
+		{
+			carregarProdutos("detalheBalancoProduto",carregouProdutosOrganizacao,"#listPesquisaProdutos");
+			carregouProdutosPesquisa = true;
+		}
+	}
+	
+	function carregarProdutosVpsaAferimento(){
+		
+		
+		if(!carregouProdutosAferimento)
+		{
+			carregarProdutos("insereProdutoAferimento",carregouProdutosAferimento,"#listProdutosAferimento");
+			carregouProdutosAferimento = true;
+		}
+	
+	}
+	
+	function carregarProdutos(metodo,carregou,idList)
+	{
+		
+		var list = $(idList);
+		list.html("");
+		list.append(
+				  $(document.createElement('li')).html("carregando...")
+				);
+	
+		
+		$.getJSON( urlCeamWeb + 'produtos.json', 
+	  			function(data) {
+	
+	  			    list.html("");
+	  				$.each(data, function(key, valLocalizacao) {
+	  					
+	  					if(valLocalizacao.produtos != null && valLocalizacao.produtos.length > 0){
+	  					
+	  					
+		  					var html = valLocalizacao.descricao;
+		  					
+		  					list.append(
+		  	      				  $(document.createElement('li')).attr('data-role','list-divider').html(html)
+		  	    				);
+		  					
+		  					$.each(valLocalizacao.produtos, function(key, valProduto) {
+		  					
+			  					 var html ='<a onclick="'+metodo+'(' + valProduto.idProduto + ');" ><b>' + valProduto.nomeProduto + '</b></a> ';
+			  					 
+			    				 list.append(
+			      				  $(document.createElement('li')).attr('id','item_pesquisa_'+valProduto.idProduto).html(html)
+			    				);
+		  					});
+	  					}
+	    				
+	  				});
+	  				
+	  				list.listview("refresh");
+	
+				});
+	}
+	
+	function closePesquisaProduto(){
+		$("#divPesquisaProduto").dialog("close");
+	}
+	
 	function salvarOrganizacao(){
 		
 		var localizacao =  $('#comboLocalizacao').val();
+		
+		if(localizacao == '')
+		{
+			alert('Informe um nome para a localização');
+			return;
+		}
+			
 		
 		for(i=0;i<itens.length;i++){
 		
@@ -108,18 +205,25 @@
 			 
 		}
 		
+		carregouProdutosOrganizacao = false;
+		
 		alert('Registro salvo com sucesso !');
 		
 		$('#listCodigos').empty();
 		itens = new Array();
 		itemEditado = null;
 		
-		
 	}
 	
 	function salvarBalancoInventario(){
 		
 		var nomeBalanco =  $('#nomeBalanco').val();
+		
+		if(nomeBalanco == '')
+		{
+			alert("Informe um nome para o balanço de inventário");	
+			return;
+		}
 		
 		var produtosAferidos = new Array();
 		
@@ -131,7 +235,7 @@
 			 
 			 if(value != undefined){
 				 
-				 produtosAferidos[count] = {idProduto: value.id,qtdeAferida:value.qtdeAferida};
+				 produtosAferidos[count] = {idProduto: value.id,qtdeAferida:value.qtdeAferida, qtdeEstoque: value.quantidadeEmEstoque};
 				 
 				 count++;
 				 
@@ -146,7 +250,14 @@
 				   
 			},"json"
 		); // Fim do POST
-				  
+		
+		$('#nomeBalanco').val("");
+		itens = new Array();
+		itemEditado = null;
+		$('#listBalancoInventario').empty();
+		
+		carregouProdutosAferimento = false;
+		
 		alert('Registro salvo com sucesso !');
 			 
 	}
@@ -171,7 +282,7 @@
 	{
 		
 		$("#" + id).remove();
-		itens.remove(id);
+		itens[id] = null;
 		
 	}
 	
@@ -196,58 +307,104 @@
 	
 	function scanearOrganizacao(){
 		
-		   /* window.plugins.barcodeScanner.scan( function(result) {  */
+		 window.plugins.barcodeScanner.scan( function(result) { 
 
-			 /*  $.getJSON('https://www.vpsa.com.br/estoque/rest/externo/showroom/1/produtos/'+result.text,   */
-		 $.getJSON('https://www.vpsa.com.br/estoque/rest/externo/showroom/1/produtos/193', 
-		  	function(data) {
-				 
-				 var list = $('#listCodigos');
-
-					//var html ='<a href="#aferirEstoque" onclick="setarItemEditado('+data.id+')" data-rel="dialog" data-transition="pop">' + data.descricao + ' - <span style="color:green;"><b>'+data.quantidadeEmEstoque+'</b></span></a> ';
-					var html = '<a>' + data.descricao + '</a>';
-					html += '<a onclick="excluirLinha( '+ data.id +' );">Excluir</a>';
-					list.append(
-			      			  $(document.createElement('li')).attr('id',data.id).html( html )
-			    	);
-					list.listview("destroy").listview();
-
-					itens[data.id] = data;
-				
-			});
+			 insereProdutoOrganizacao(result.text);
 	        
-	        /* }, function(error) {
+	        }, function(error) {
 	        alert("Scanning failed: " + error);
 	    }  
-		);    */
+		);   
+		
+	}
+	
+	function insereProdutoOrganizacao(id)
+	{
+		
+		$.getJSON( urlVpsa + 'produtos/'+id, 
+				/*  $.getJSON(urlVpsa + 'produtos/193',  */
+				  	function(data) {
+				  	
+				  		if(data == null || data == undefined || data.id == null)
+						{
+							alert('Produto não encontrado.');
+							return;
+						}
+					
+						if(itens[data.id] != null)
+						{
+							alert('Produto já inserido.');
+							return;
+						}
+					
+						 var list = $('#listCodigos');
+							
+							var html = '<a>' + data.descricao + '</a>';
+							html += '<a onclick="excluirLinha( '+ data.id +' );">Excluir</a>';
+							list.append(
+					      			  $(document.createElement('li')).attr('id',data.id).html( html )
+					    	);
+							
+							list.listview("refresh");
+							
+							$("#item_pesquisa_" + data.id).append('<span class="ui-li-count">+</span>');
+							
+							$('#listProdutos').listview("refresh");
+							
+							itens[data.id] = data;
+						
+					});
 		
 	}
 	
 	function scannerBalancoInventario(){
 		
-		   /* window.plugins.barcodeScanner.scan( function(result) {  */
-
-			 /*  $.getJSON('https://www.vpsa.com.br/estoque/rest/externo/showroom/1/produtos/'+result.text,   */
-		 $.getJSON('https://www.vpsa.com.br/estoque/rest/externo/showroom/1/produtos/193', 
-		  	function(data) {
-				 
-				 var list = $('#listBalancoInventario');
-
-					var html ='<a href="#aferirEstoque" onclick="setarItemEditado('+data.id+')" data-rel="dialog" data-transition="pop">' + data.descricao + ' - <span style="color:green;"><b>'+data.quantidadeEmEstoque+'</b></span></a> ';
-					html += '<a onclick="excluirLinha( '+ data.id +' );">Excluir</a>';
-					list.append(
-			      			  $(document.createElement('li')).attr('id',data.id).html( html )
-			    	);
-					list.listview("destroy").listview();
-
-					itens[data.id] = data;
-				
-			});
+		window.plugins.barcodeScanner.scan( function(result) { 
 	        
-	        /* }, function(error) {
+			insereProdutoAferimento(result.text);
+			
+	    }, function(error) {
 	        alert("Scanning failed: " + error);
 	    }  
-		);    */
+		);
+		
+	}
+	
+	function insereProdutoAferimento(id)
+	{
+		
+		$.getJSON(urlVpsa + 'produtos/'+id,
+				/*  $.getJSON(urlVpsa + 'produtos/193',  */
+				  	function(data) { 
+						
+						if(data == null || data == undefined || data.id == null)
+						{
+							alert('Produto não encontrado.');
+							return;
+						}
+						
+				  		if(itens[data.id] != null)
+						{
+							alert('Produto já inserido.');
+							return;
+						}
+						
+						 var list = $('#listBalancoInventario');
+
+							var html ='<a href="#aferirEstoque" onclick="setarItemEditado('+data.id+')" data-rel="dialog" data-transition="pop">' + data.descricao + ' - <span style="color:green;"><b>'+data.quantidadeEmEstoque+'</b></span></a> ';
+							html += '<a onclick="excluirLinha( '+ data.id +' );">Excluir</a>';
+							list.append(
+					      			  $(document.createElement('li')).attr('id',data.id).html( html )
+					    	);
+							list.listview("destroy").listview();
+							
+							$("#item_pesquisa_" + data.id).append('<span class="ui-li-count">ok</span>');
+							
+							$('#listProdutosAferimento').listview("refresh");
+
+							itens[data.id] = data;
+						
+					});
 		
 	}
 	
@@ -283,10 +440,23 @@
 			salvarBalancoInventario();
 		});
 		
+		$('#pesquisarProdutosButton').click(function(){
+			carregarProdutosVpsaOrganizacao();
+		});
+		
+		$('#pesquisarProdutosAferimentoButton').click(function(){
+			carregarProdutosVpsaAferimento();
+		});
+		
+		$('#buttonPesquisaProdutos').click(function(){
+			carregarProdutosVpsaPesquisa();
+		});
+		
 		$('#buttonCancelar').click(function(){
 			$("#aferirEstoque").dialog("close");
 		});
-  	    
+		
+		
 	} );
 	
 	</script>  
@@ -294,7 +464,7 @@
 </head>
 <body >
 
- 	<div data-role="page" id="home"> 
+ 	<div data-role="page" id="home" data-theme="a"> 
  
 	  <div data-role="header"> 
 	    <h1>CEAM</h1> 
@@ -302,22 +472,25 @@
  
 	  <div data-role="content" id="content">
 	  
-	    <p><a href="#divLocalizacaoes"  data-role="button" id="buttonLocaliza" data-back="true" data-transition="slide">Cadastro de Localidades</a></p>  
-	    <p><a href="#divOrganizacaoEstoque" data-role="button" id="buttonScanner" data-back="true" data-transition="slide">Organizar Estoque</a></p>  
-	    <p><a href="#divBalancoInventario" data-role="button">Balanço de Inventário</a></p>
+	    <p><a href="#divLocalizacaoes"  data-role="button" id="buttonLocaliza" data-rel="page" data-back="true" data-transition="slide">Cadastro de Localidades</a></p>  
+	    <p><a href="#divOrganizacaoEstoque" data-role="button" id="buttonScanner" data-rel="page" data-back="true" data-transition="slide">Organizar Estoque</a></p>  
+	    <p><a href="#divBalancoInventario" data-role="button" id="buttonBalancoInventario" data-rel="page" data-back="true" data-transition="slide">Balanço de Inventário</a></p>
+	    <p><a href="#divPesquisaProduto" data-role="button" id="buttonPesquisaProdutos" data-rel="page" data-back="true" data-transition="slide">Pesquisar Produtos</a></p>
+	    <p><a href="http://ceam.herokuapp.com/localizacaos" data-role="button" id="buttonDivCeamWeb" data-rel="page" data-back="true" data-transition="slide">Ceam Web</a></p>
 	   
 	  </div> 
 	  
 	 </div>
 	  
-	  <div data-role="page" id="divLocalizacaoes">
+	  <div data-role="page" id="divLocalizacaoes" data-theme="a">
 	  
 	  	<div data-role="header"> 
+	  		<a href="#home" data-role="button" data-rel="page" data-back="true" data-transition="slide">Voltar</a>
 	    	<h1>CEAM</h1> 
 	    	<div class="ui-body ui-body-b" align="center"> 
 	    		<input type="text" name="descricao" id="descricao" value="" placeholder="Descrição"/> 
 	    		<br/>
-		     	<a id="cadastrar" data-role="button" data-theme="b" data-icon="plus" >Adicionar</a>
+		     	<a id="cadastrar" data-role="button" data-theme="a" data-icon="plus" >Adicionar</a>
 	    	</div>
 	  	</div> 
 	  
@@ -328,8 +501,8 @@
 	 	 </div> 
 	  </div>
 	  
-	  <div data-role="page" id="detalheLocalizacao">
-	  
+	  <div data-role="page" id="detalheLocalizacao" data-theme="a">
+	  	
 	  	<div data-role="header"> 
 	    	<h1>CEAM</h1> 
 	  	</div> 
@@ -340,17 +513,18 @@
     		</ul> 
 	 	 </div> 
 	 	 <div data-role="footer">
-		     	<a data-role="button" data-theme="b" data-icon="delete" data-inline="true" onclick="$('#detalheLocalizacao').dialog('close');">Fechar</a> 
+		     	<a data-role="button" data-theme="a" data-icon="delete" data-inline="true" onclick="$('#detalheLocalizacao').dialog('close');">Fechar</a> 
 	    </div>
 	  </div>
 	  
-	  <div data-role="page" id="divOrganizacaoEstoque">
-	  
+	  <div data-role="page" id="divOrganizacaoEstoque" data-theme="a">
 	  	<div data-role="header"> 
+	  		<a href="#home" data-role="button" data-rel="page" data-back="true" data-transition="slide">Voltar</a>
 	    	<h1>CEAM</h1> 
 	    	<div class="ui-body ui-body-b"  align="center"> 
-		     	<a id="scannerOrganizacaoButton" data-role="button" data-theme="b" data-icon="plus" data-inline="true">Escanear</a> 
-		     	<a id="salvarOrganizacao" data-role="button" data-theme="b" data-icon="check" data-inline="true">Salvar</a> 
+		     	<a id="scannerOrganizacaoButton" data-role="button" data-theme="a" data-icon="plus" data-inline="true">Escanear</a> 
+		     	<a href="#popPesquisaProduto" id="pesquisarProdutosButton" data-role="button" data-theme="a" data-icon="plus" data-inline="true" data-rel="dialog">Produtos</a> 
+		     	<a id="salvarOrganizacao" data-role="button" data-theme="a" data-icon="check" data-inline="true">Salvar</a> 
 	    	</div>
 	  	</div> 
 	  	<div data-role="fieldcontain">
@@ -360,7 +534,7 @@
 			</div>
 	     <div data-role="content">
 	     	<div>
-	     		<ul data-role="listview" data-split-theme="d" data-split-icon="delete" data-count-theme="b" id="listCodigos"> 
+	     		<ul data-role="listview" data-split-theme="a" data-split-icon="delete" data-count-theme="b" id="listCodigos"> 
       
     			</ul>
     		</div>
@@ -368,22 +542,23 @@
 	 	 </div> 
 	  </div>
 	  
-	  <div data-role="page" id="divBalancoInventario">
-	  
-	  	<div data-role="header"> 
+	  <div data-role="page" id="divBalancoInventario" data-theme="a">
+	  	
+	  	<div data-role="header" > 
+	  		<a href="#home" data-role="button" data-rel="page" data-back="true" data-transition="slide">Voltar</a>
 	    	<h1>CEAM</h1> 
 	    	<div class="ui-body ui-body-b"  align="center"> 
-		     	<a id="scannerBalancoInventario" data-role="button" data-theme="b" data-icon="plus" data-inline="true">Escanear</a> 
-		     	<a id="salvarBalancoInventario" data-role="button" data-theme="b" data-icon="check" data-inline="true">Salvar</a> 
+		     	<a id="scannerBalancoInventario" data-role="button" data-theme="a" data-icon="plus" data-inline="true">Escanear</a> 
+		     	<a href="#popPesquisaProdutoAferimento" id="pesquisarProdutosAferimentoButton" data-role="button" data-theme="a" data-icon="plus" data-inline="true" data-rel="dialog">Produtos</a> 
+		     	<a id="salvarBalancoInventario" data-role="button" data-theme="a" data-icon="check" data-inline="true">Salvar</a> 
 	    	</div>
 	  	</div> 
 	  	<div data-role="fieldcontain">
-	  			<label for="basic">Nome:</label>
-   				 <input type="text" name="nomeBalanco" id="nomeBalanco" value=""  />
+   				 <input type="text" name="nomeBalanco" id="nomeBalanco" value="" placeholder="Balanço de Inventário" />
 			</div>
 	     <div data-role="content">
 	     	<div>
-	     		<ul data-role="listview" data-split-theme="d" data-split-icon="delete" data-count-theme="b" id="listBalancoInventario"> 
+	     		<ul data-role="listview" data-split-theme="a" data-split-icon="delete" data-count-theme="b" id="listBalancoInventario"> 
       
     			</ul>
     		</div>
@@ -391,8 +566,8 @@
 	 	 </div> 
 	  </div>
 	  
-	  <div data-role="page" id="aferirEstoque">
-	  
+	  <div data-role="page" id="aferirEstoque" data-theme="a">
+	  	
 	  	<div data-role="header"> 
 	    	<h1>CEAM</h1> 
 	  	</div> 
@@ -403,11 +578,56 @@
     		
 	 	 </div> 
 	 	 <div data-role="footer">
-		     	<a id="buttonAferir" data-role="button" data-theme="b" data-icon="check" data-inline="true" onclick="inserirQuantidadeAferida();">Confirmar</a> 
-		     	<a id="buttonCancelar" data-role="button" data-theme="b" data-icon="delete" data-inline="true">Cancelar</a> 
+		     	<a id="buttonAferir" data-role="button" data-theme="a" data-icon="check" data-inline="true" onclick="inserirQuantidadeAferida();">Confirmar</a> 
+		     	<a id="buttonCancelar" data-role="button" data-theme="a" data-icon="delete" data-inline="true">Cancelar</a> 
 	    </div>
 	  </div>
-	 
+	  
+	  <div data-role="page" id="popPesquisaProduto" data-theme="a">
+	  	
+	  	<div data-role="header" > 
+	    	<h1>CEAM</h1> 
+	  	</div> 
+	     <div data-role="content">
+	     	<div>
+	     		<ul data-role="listview" id="listProdutos" data-filter="true" data-count-theme="b" data-inset="true"> 
+      
+    			</ul>
+    		</div>
+    		
+	 	 </div> 
+	  </div>
+	  
+	  <div data-role="page" id="divPesquisaProduto" data-theme="a">
+	  	<div data-role="header" > 
+	  		<a href="#home" data-role="button" data-rel="page" data-back="true" data-transition="slide">Voltar</a>
+	    	<h1>CEAM</h1> 
+	  	</div> 
+	     <div data-role="content">
+	     	<div>
+	     		<ul data-role="listview" id="listPesquisaProdutos" data-filter="true"> 
+      
+    			</ul>
+    		</div>
+    		
+	 	 </div> 
+	  </div>
+	  
+	  <div data-role="page" id="popPesquisaProdutoAferimento" data-theme="a">
+	  	
+	  	<div data-role="header" > 
+	    	<h1>CEAM</h1> 
+	  	</div> 
+	     <div data-role="content">
+	     	<div>
+	     		<ul data-role="listview" id="listProdutosAferimento" data-count-theme="b" data-filter="true"> 
+      
+    			</ul>
+    		</div>
+    		
+	 	 </div> 
+	  </div>
+	  
 
 
  
