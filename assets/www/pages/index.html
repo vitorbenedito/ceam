@@ -19,17 +19,19 @@
 	
 	var itens = new Array();
 	
+	var produtosVpsa = new Array();
+	
 	var carregouProdutosOrganizacao = false;
 	
 	var carregouProdutosAferimento = false;
 	
 	var carregouProdutosPesquisa = false;
 	
-	var urlCeamWeb = "http://ceam.herokuapp.com/";
+	//var urlCeamWeb = "http://ceam.herokuapp.com/";
 	
 	var urlVpsa = "https://www.vpsa.com.br/estoque/rest/externo/showroom/1/"; 
 	
-	//var urlCeamWeb = "http://10.0.2.2:3000/";
+	var urlCeamWeb = "http://10.0.2.2:3000/";
 	
 	function carregaLocalizacoes(){
 		
@@ -64,14 +66,16 @@
 			$(document.createElement('li')).html("carregando...")
 		);
 		
-		$.getJSON( urlCeamWeb + 'localizacaos/' + id + '.json', 
+		$.getJSON( urlCeamWeb + 'localizacaos/loadprodutos/' + id + '.json', 
 	  			function(data) {
 					list.html("");
 	  				$.each(data, function(key, val) {
 
-	    				 list.append(
-	      				  $(document.createElement('li')).html(val.nomeProduto)
-	    				);
+	  					var produto = produtosVpsa[val.idProduto];
+	  			  		
+	  		    		list.append(
+	  		      			$(document.createElement('li')).html(produto.descricao)
+	  		    		);
 	    				
 	  				});
 	  				
@@ -124,13 +128,29 @@
 	
 	function carregarProdutosVpsaAferimento(){
 		
-		
 		if(!carregouProdutosAferimento)
 		{
 			carregarProdutos("insereProdutoAferimento",carregouProdutosAferimento,"#listProdutosAferimento");
 			carregouProdutosAferimento = true;
 		}
 	
+	}
+	
+	function carregarProdutosVpsa()
+	{
+		
+		if( produtosVpsa == null || produtosVpsa.length == 0 )
+		{
+		
+			$.getJSON( urlVpsa + '/produtos', 
+		  			function(data) {
+		  				$.each(data, function(key, val) {
+		  					produtosVpsa[val.id] = val;
+		  			});
+		  				
+			});
+		}
+		
 	}
 	
 	function carregarProdutos(metodo,carregou,idList)
@@ -140,39 +160,67 @@
 		list.html("");
 		list.append(
 				  $(document.createElement('li')).html("carregando...")
-				);
-	
+		 );
 		
-		$.getJSON( urlCeamWeb + 'produtos.json', 
-	  			function(data) {
-	
-	  			    list.html("");
-	  				$.each(data, function(key, valLocalizacao) {
+		var produtosComLocalizacao = new Array();
+		
+		$.getJSON( urlCeamWeb + 'localizacaos.json', 
+				function(data) {
+			
+				list.html("");
+				
+				$.each(data, function(key, valLocalizacao) {
+					
+					if(valLocalizacao.produtos != null && valLocalizacao.produtos.length > 0){
 	  					
-	  					if(valLocalizacao.produtos != null && valLocalizacao.produtos.length > 0){
 	  					
+	  					var html = valLocalizacao.descricao;
 	  					
-		  					var html = valLocalizacao.descricao;
-		  					
-		  					list.append(
-		  	      				  $(document.createElement('li')).attr('data-role','list-divider').html(html)
-		  	    				);
-		  					
-		  					$.each(valLocalizacao.produtos, function(key, valProduto) {
-		  					
-			  					 var html ='<a onclick="'+metodo+'(' + valProduto.idProduto + ');" ><b>' + valProduto.nomeProduto + '</b></a> ';
-			  					 
-			    				 list.append(
-			      				  $(document.createElement('li')).attr('id','item_pesquisa_'+valProduto.idProduto).html(html)
-			    				);
-		  					});
-	  					}
-	    				
-	  				});
-	  				
-	  				list.listview("refresh");
-	
-				});
+	  					list.append(
+	  	      				  $(document.createElement('li')).attr('data-role','list-divider').html(html)
+	  	    				);
+	  					
+	  					$.each(valLocalizacao.produtos, function(key, valProduto) {
+	  						
+	  						 var produto = produtosVpsa[valProduto.idProduto];
+	  						
+		  					 var html ='<a onclick="'+metodo+'(' + valProduto.idProduto + ');" ><b>' + produto.descricao + '</b></a> ';
+		  					 
+		    				 list.append(
+		      				  $(document.createElement('li')).attr('id','item_pesquisa_'+valProduto.idProduto).html(html)
+		    				);
+		    				 
+		    				 produtosComLocalizacao[valProduto.idProduto] = valProduto;
+		    				 
+	  					});
+  					}
+					
+			});
+				
+				list.append(
+		  				  $(document.createElement('li')).attr('data-role','list-divider').html("Produtos sem localização")
+						);
+				
+				for(i=0;i<produtosVpsa.length;i++)
+				{
+					 var produtoVpsa = produtosVpsa[i+1];
+					 
+					 if(produtoVpsa != undefined && produtosComLocalizacao[produtoVpsa.id] == undefined){
+						 
+						 var html ='<a onclick="'+metodo+'(' + produtoVpsa.id + ');" ><b>' + produtoVpsa.descricao + '</b></a> ';
+							 
+						 list.append(
+		  					  $(document.createElement('li')).attr('id','item_pesquisa_'+produtoVpsa.id).html(html)
+						 );
+						 
+					 }
+				} 
+			
+				list.listview("refresh");
+				
+		});
+		
+		
 	}
 	
 	function closePesquisaProduto(){
@@ -323,39 +371,36 @@
 	function insereProdutoOrganizacao(id)
 	{
 		
-		$.getJSON( urlVpsa + 'produtos/'+id, 
-				/*  $.getJSON(urlVpsa + 'produtos/193',  */
-				  	function(data) {
-				  	
-				  		if(data == null || data == undefined || data.id == null)
-						{
-							alert('Produto não encontrado.');
-							return;
-						}
+		var data = produtosVpsa[id];
+		
+		if(data == null || data == undefined || data.id == null)
+		{
+			alert('Produto não encontrado.');
+			return;
+		}
 					
-						if(itens[data.id] != null)
-						{
-							alert('Produto já inserido.');
-							return;
-						}
+		if(itens[data.id] != null)
+		{
+			alert('Produto já inserido.');
+			return;
+		}
 					
-						 var list = $('#listCodigos');
+	    var list = $('#listCodigos');
 							
-							var html = '<a>' + data.descricao + '</a>';
-							html += '<a onclick="excluirLinha( '+ data.id +' );">Excluir</a>';
-							list.append(
-					      			  $(document.createElement('li')).attr('id',data.id).html( html )
-					    	);
+		var html = '<a>' + data.descricao + '</a>';
+		html += '<a onclick="excluirLinha( '+ data.id +' );">Excluir</a>';
+		list.append(
+				 $(document.createElement('li')).attr('id',data.id).html( html )
+		);
 							
-							list.listview("refresh");
+		list.listview("refresh");
 							
-							$("#item_pesquisa_" + data.id).append('<span class="ui-li-count">+</span>');
+		$("#item_pesquisa_" + data.id).append('<span class="ui-li-count">+</span>');
 							
-							$('#listProdutos').listview("refresh");
+		$('#listProdutos').listview("refresh");
 							
-							itens[data.id] = data;
+		itens[data.id] = data;
 						
-					});
 		
 	}
 	
@@ -364,7 +409,15 @@
 		window.plugins.barcodeScanner.scan( function(result) { 
 			if(result != null && result.text != '')
 			{
-				insereProdutoAferimento(result.text);
+				
+				if(IsNumeric(result.text))
+				{
+					insereProdutoAferimento(result.text);
+				}
+				else
+				{
+					insereProdutosPorLocalizacao(result.text);
+				}
 				scannerBalancoInventario();
 			}
 			
@@ -375,47 +428,83 @@
 		
 	}
 	
+	function IsNumeric(input){
+	    var RE = /^-{0,1}\d*\.{0,1}\d+$/;
+	    return (RE.test(input));
+	}
+
+	
 	function insereProdutoAferimento(id)
 	{
 		
-		$.getJSON(urlVpsa + 'produtos/'+id,
-				/*  $.getJSON(urlVpsa + 'produtos/193',  */
-				  	function(data) { 
+		var data = produtosVpsa[id];
 						
-						if(data == null || data == undefined || data.id == null)
-						{
-							alert('Produto não encontrado.');
-							return;
-						}
+		if(data == null || data == undefined || data.id == null)
+		{
+			alert('Produto não encontrado.');
+			return;
+		}
 						
-				  		if(itens[data.id] != null)
-						{
-							alert('Produto já inserido.');
-							return;
-						}
+		if(itens[data.id] != null)
+		{
+			alert('Produto já inserido.');
+			return;
+		}
 						
-						 var list = $('#listBalancoInventario');
+		var list = $('#listBalancoInventario');
 
-							var html ='<a href="#aferirEstoque" onclick="setarItemEditado('+data.id+')" data-rel="dialog" data-transition="pop">' + data.descricao + ' - <span style="color:green;"><b>'+data.quantidadeEmEstoque+'</b></span></a> ';
-							html += '<a onclick="excluirLinha( '+ data.id +' );">Excluir</a>';
-							list.append(
-					      			  $(document.createElement('li')).attr('id',data.id).html( html )
-					    	);
-							list.listview("destroy").listview();
+		var html ='<a href="#aferirEstoque" onclick="setarItemEditado('+data.id+')" data-rel="dialog" data-transition="pop">' + data.descricao + ' - <span style="color:green;"><b>'+data.quantidadeEmEstoque+'</b></span></a> ';
+		html += '<a onclick="excluirLinha( '+ data.id +' );">Excluir</a>';
+		list.append(
+					   $(document.createElement('li')).attr('id',data.id).html( html )
+				);
+		list.listview("destroy").listview();
 							
-							$("#item_pesquisa_" + data.id).append('<span class="ui-li-count">ok</span>');
+		$("#item_pesquisa_" + data.id).append('<span class="ui-li-count">+</span>');
 							
-							$('#listProdutosAferimento').listview("refresh");
+		$('#listProdutosAferimento').listview("refresh");
 
-							itens[data.id] = data;
-						
-					});
+		itens[data.id] = data;
+					
+		
+	}
+	
+	function insereProdutosPorLocalizacao(text)
+	{
+		
+		$.getJSON( urlCeamWeb + 'localizacaos/find/'+text+'.json', 
+	  			function(data) {
+			
+					
+				$.each(data, function(key, val) {
+					
+					var produto = produtosVpsa[val.idProduto];
+					
+					var list = $('#listBalancoInventario');
+					
+					var html ='<a href="#aferirEstoque" onclick="setarItemEditado('+produto.id+')" data-rel="dialog" data-transition="pop">' + produto.descricao + ' - <span style="color:green;"><b>'+produto.quantidadeEmEstoque+'</b></span></a> ';
+					html += '<a onclick="excluirLinha( '+ data.id +' );">Excluir</a>';
+					list.append(
+								   $(document.createElement('li')).attr('id',produto.id).html( html )
+							);
+					list.listview("destroy").listview();
+										
+					$("#item_pesquisa_" + produto.id).append('<span class="ui-li-count">+</span>');
+										
+					$('#listProdutosAferimento').listview("refresh");
+			
+					itens[produto.id] = produto;
+				})
+		});
+					
 		
 	}
 	
 	$( function() {
 		
 		this.itens = [];
+		
+		carregarProdutosVpsa();
 		
 		$('#buttonLocaliza').click(function() {
 			carregaLocalizacoes();
