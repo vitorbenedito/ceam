@@ -187,7 +187,7 @@
 		  					 var html ='<a onclick="'+metodo+'(' + valProduto.idProduto + ');" ><b>' + produto.descricao + '</b></a> ';
 		  					 
 		    				 list.append(
-		      				  $(document.createElement('li')).attr('id','item_pesquisa_'+valProduto.idProduto).html(html)
+		      				  $(document.createElement('li')).html(html)
 		    				);
 		    				 
 		    				 produtosComLocalizacao[valProduto.idProduto] = valProduto;
@@ -210,7 +210,7 @@
 						 var html ='<a onclick="'+metodo+'(' + produtoVpsa.id + ');" ><b>' + produtoVpsa.descricao + '</b></a> ';
 							 
 						 list.append(
-		  					  $(document.createElement('li')).attr('id','item_pesquisa_'+produtoVpsa.id).html(html)
+		  					  $(document.createElement('li')).html(html)
 						 );
 						 
 					 }
@@ -357,8 +357,8 @@
 			
 			 if(result != null && result.text != '')
 			 {
+				scanearOrganizacao();
 			 	insereProdutoOrganizacao(result.text);
-			 	scanearOrganizacao();
 			 }
 	        
 	        }, function(error) {
@@ -394,11 +394,7 @@
 		);
 							
 		list.listview("refresh");
-							
-		$("#item_pesquisa_" + data.id).append('<span class="ui-li-count">+</span>');
-							
-		$('#listProdutos').listview("refresh");
-							
+		
 		itens[data.id] = data;
 						
 		
@@ -406,25 +402,25 @@
 	
 	function scannerBalancoInventario(){
 		
-		window.plugins.barcodeScanner.scan( function(result) { 
+		 window.plugins.barcodeScanner.scan( function(result) { 
 			if(result != null && result.text != '')
 			{
 				
 				if(IsNumeric(result.text))
 				{
+					scannerBalancoInventario();
 					insereProdutoAferimento(result.text);
 				}
 				else
-				{
+				{ 
 					insereProdutosPorLocalizacao(result.text);
-				}
-				scannerBalancoInventario();
+				 }
 			}
 			
 	    }, function(error) {
 	        alert("Scanning failed: " + error);
 	    }  
-		);
+		); 
 		
 	}
 	
@@ -459,13 +455,8 @@
 					   $(document.createElement('li')).attr('id',data.id).html( html )
 				);
 		list.listview("destroy").listview();
-							
-		$("#item_pesquisa_" + data.id).append('<span class="ui-li-count">+</span>');
-							
-		$('#listProdutosAferimento').listview("refresh");
-
+		
 		itens[data.id] = data;
-					
 		
 	}
 	
@@ -474,27 +465,24 @@
 		
 		$.getJSON( urlCeamWeb + 'localizacaos/find/'+text+'.json', 
 	  			function(data) {
-			
+				
+				var list = $('#listBalancoInventario');
 					
 				$.each(data, function(key, val) {
 					
 					var produto = produtosVpsa[val.idProduto];
 					
-					var list = $('#listBalancoInventario');
-					
 					var html ='<a href="#aferirEstoque" onclick="setarItemEditado('+produto.id+')" data-rel="dialog" data-transition="pop">' + produto.descricao + ' - <span style="color:green;"><b>'+produto.quantidadeEmEstoque+'</b></span></a> ';
-					html += '<a onclick="excluirLinha( '+ data.id +' );">Excluir</a>';
+					html += '<a onclick="excluirLinha( '+ produto.id +' );">Excluir</a>';
 					list.append(
 								   $(document.createElement('li')).attr('id',produto.id).html( html )
 							);
-					list.listview("destroy").listview();
-										
-					$("#item_pesquisa_" + produto.id).append('<span class="ui-li-count">+</span>');
-										
-					$('#listProdutosAferimento').listview("refresh");
 			
 					itens[produto.id] = produto;
 				})
+				
+				list.listview("refresh");
+
 		});
 					
 		

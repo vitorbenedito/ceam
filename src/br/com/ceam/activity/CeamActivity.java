@@ -9,6 +9,11 @@ public class CeamActivity extends DroidGap {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        
+        super.setStringProperty("loadingDialog", "Carregando...");
+        
+        super.init();
+        
         super.loadUrl("file:///android_asset/www/pages/index.html");
     }
 }
