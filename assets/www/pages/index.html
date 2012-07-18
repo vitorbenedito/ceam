@@ -31,6 +31,8 @@
 	
 	var urlVpsa = "https://www.vpsa.com.br/estoque/rest/externo/showroom/1/"; 
 	
+	var validouSenha = false;
+	
 	//var urlCeamWeb = "http://10.0.2.2:3000/";
 	
 	function carregaLocalizacoes(){
@@ -200,7 +202,7 @@
 				list.append(
 		  				  $(document.createElement('li')).attr('data-role','list-divider').html("Produtos sem localização")
 						);
-				
+				var count = 0;
 				for(i=0;i<produtosVpsa.length;i++)
 				{
 					 var produtoVpsa = produtosVpsa[i+1];
@@ -213,6 +215,13 @@
 		  					  $(document.createElement('li')).html(html)
 						 );
 						 
+						 count++;
+						 
+					 }
+
+					 if(count == 10)
+					 {
+						 break;
 					 }
 				} 
 			
@@ -275,6 +284,12 @@
 			 var value = itens[i+1];
 			 
 			 if(value != undefined){
+				 if(value.qtdeAferida != value.quantidadeEmEstoque && !validouSenha)
+				 {
+					 alert("Quantidade aferida diferente da quantidade em estoque do produto " + value.descricao);
+					 $.mobile.changePage( "#divSenha", { transition: "slideup"} );
+					 return;
+				 }
 				 
 				 produtosAferidos[count] = {idProduto: value.id,qtdeAferida:value.qtdeAferida, qtdeEstoque: value.quantidadeEmEstoque};
 				 
@@ -297,7 +312,12 @@
 		itemEditado = null;
 		$('#listBalancoInventario').empty();
 		
-		carregouProdutosAferimento = false;
+		if(validouSenha == true)
+		{
+			validouSenha = false;
+			$.mobile.changePage( "#divBalancoInventario", { transition: "slideup"} );
+		}
+		
 		
 		alert('Registro salvo com sucesso !');
 			 
@@ -424,6 +444,21 @@
 		
 	}
 	
+	function validarSenha()
+	{
+		var senha = $('#senha').val();
+		
+		if(senha == 'vpsa')
+		{
+			validouSenha = true;
+			salvarBalancoInventario();
+		}
+		else
+		{
+			alert('Senha incorreta');
+		}
+	}
+	
 	function IsNumeric(input){
 	    var RE = /^-{0,1}\d*\.{0,1}\d+$/;
 	    return (RE.test(input));
@@ -449,7 +484,7 @@
 						
 		var list = $('#listBalancoInventario');
 
-		var html ='<a href="#aferirEstoque" onclick="setarItemEditado('+data.id+')" data-rel="dialog" data-transition="pop">' + data.descricao + ' - <span style="color:green;"><b>'+data.quantidadeEmEstoque+'</b></span></a> ';
+		var html ='<a href="#aferirEstoque" onclick="setarItemEditado('+data.id+')" data-rel="dialog" data-transition="pop">' + data.descricao + '</a> ';
 		html += '<a onclick="excluirLinha( '+ data.id +' );">Excluir</a>';
 		list.append(
 					   $(document.createElement('li')).attr('id',data.id).html( html )
@@ -472,7 +507,7 @@
 					
 					var produto = produtosVpsa[val.idProduto];
 					
-					var html ='<a href="#aferirEstoque" onclick="setarItemEditado('+produto.id+')" data-rel="dialog" data-transition="pop">' + produto.descricao + ' - <span style="color:green;"><b>'+produto.quantidadeEmEstoque+'</b></span></a> ';
+					var html ='<a href="#aferirEstoque" onclick="setarItemEditado('+produto.id+')" data-rel="dialog" data-transition="pop">' + produto.descricao + '</a> ';
 					html += '<a onclick="excluirLinha( '+ produto.id +' );">Excluir</a>';
 					list.append(
 								   $(document.createElement('li')).attr('id',produto.id).html( html )
@@ -570,9 +605,12 @@
 	  		<a href="#home" data-role="button" data-rel="page" data-back="true" data-transition="slide">Voltar</a>
 	    	<h1>CEAM</h1> 
 	    	<div class="ui-body ui-body-b" align="center"> 
-	    		<input type="text" name="descricao" id="descricao" value="" placeholder="Descrição"/> 
-	    		<br/>
-		     	<a id="cadastrar" data-role="button" data-theme="a" data-icon="plus" >Adicionar</a>
+	    		<input type="text" name="descricao" id="descricao" value="" placeholder="Descrição"/>
+	    	</div>
+	    	<div data-role="navbar">
+	    		<ul>
+	    			<li><a id="cadastrar" data-role="button" data-theme="a" data-icon="plus" >Adicionar</a></li>
+	    		</ul>
 	    	</div>
 	  	</div> 
 	  
@@ -595,7 +633,11 @@
     		</ul> 
 	 	 </div> 
 	 	 <div data-role="footer">
-		     	<a data-role="button" data-theme="a" data-icon="delete" data-inline="true" onclick="$('#detalheLocalizacao').dialog('close');">Fechar</a> 
+	 	  	<div data-role="navbar">
+	 	  		<ul>
+		     		<li><a data-role="button" data-theme="a" data-icon="delete" data-inline="true" onclick="$('#detalheLocalizacao').dialog('close');">Fechar</a> </li>
+		     	</ul>
+		     </div>
 	    </div>
 	  </div>
 	  
@@ -603,10 +645,12 @@
 	  	<div data-role="header"> 
 	  		<a href="#home" data-role="button" data-rel="page" data-back="true" data-transition="slide">Voltar</a>
 	    	<h1>CEAM</h1> 
-	    	<div class="ui-body ui-body-b"  align="center"> 
-		     	<a id="scannerOrganizacaoButton" data-role="button" data-theme="a" data-icon="plus" data-inline="true">Escanear</a> 
-		     	<a href="#popPesquisaProduto" id="pesquisarProdutosButton" data-role="button" data-theme="a" data-icon="plus" data-inline="true" data-rel="dialog">Produtos</a> 
-		     	<a id="salvarOrganizacao" data-role="button" data-theme="a" data-icon="check" data-inline="true">Salvar</a> 
+	    	<div data-role="navbar">
+	    		<ul>
+			     	<li> <a id="scannerOrganizacaoButton" data-role="button" data-theme="a" data-icon="plus" data-inline="true">Escanear</a> </li>
+			     	<li> <a href="#popPesquisaProduto" id="pesquisarProdutosButton" data-role="button" data-theme="a" data-icon="plus" data-inline="true">Produtos</a> </li>
+			     	<li> <a id="salvarOrganizacao" data-role="button" data-theme="a" data-icon="check" data-inline="true">Salvar</a>  </li>
+		     	</ul>
 	    	</div>
 	  	</div> 
 	  	<div data-role="fieldcontain">
@@ -629,10 +673,12 @@
 	  	<div data-role="header" > 
 	  		<a href="#home" data-role="button" data-rel="page" data-back="true" data-transition="slide">Voltar</a>
 	    	<h1>CEAM</h1> 
-	    	<div class="ui-body ui-body-b"  align="center"> 
-		     	<a id="scannerBalancoInventario" data-role="button" data-theme="a" data-icon="plus" data-inline="true">Escanear</a> 
-		     	<a href="#popPesquisaProdutoAferimento" id="pesquisarProdutosAferimentoButton" data-role="button" data-theme="a" data-icon="plus" data-inline="true" data-rel="dialog">Produtos</a> 
-		     	<a id="salvarBalancoInventario" data-role="button" data-theme="a" data-icon="check" data-inline="true">Salvar</a> 
+	    	<div data-role="navbar">
+	    		<ul>
+		     		<li><a id="scannerBalancoInventario" data-role="button" data-theme="a" data-icon="plus" data-inline="true">Escanear</a></li>
+		     		<li><a href="#popPesquisaProdutoAferimento" id="pesquisarProdutosAferimentoButton" data-role="button" data-theme="a" data-icon="plus" data-inline="true">Produtos</a></li>
+		     		<li><a id="salvarBalancoInventario" data-role="button" data-theme="a" data-icon="check" data-inline="true">Salvar</a></li> 
+		     	</ul>
 	    	</div>
 	  	</div> 
 	  	<div data-role="fieldcontain">
@@ -660,15 +706,20 @@
     		
 	 	 </div> 
 	 	 <div data-role="footer">
-		     	<a id="buttonAferir" data-role="button" data-theme="a" data-icon="check" data-inline="true" onclick="inserirQuantidadeAferida();">Confirmar</a> 
-		     	<a id="buttonCancelar" data-role="button" data-theme="a" data-icon="delete" data-inline="true">Cancelar</a> 
+	 	 	<div data-role="navbar">
+	 	 		<ul>
+		     		<li><a id="buttonAferir" data-theme="a" data-icon="check" onclick="inserirQuantidadeAferida();">Confirmar</a> </li>
+		     		<li><a id="buttonCancelar" data-theme="a" data-icon="delete" >Cancelar</a> </li>
+		     	</ul>
+		     </div>
 	    </div>
 	  </div>
 	  
 	  <div data-role="page" id="popPesquisaProduto" data-theme="a">
 	  	
 	  	<div data-role="header" > 
-	    	<h1>CEAM</h1> 
+	  		<a href="#divOrganizacaoEstoque" data-role="button" data-rel="page" data-back="true" data-transition="slide">Voltar</a>
+	   		<h1>CEAM</h1> 
 	  	</div> 
 	     <div data-role="content">
 	     	<div>
@@ -698,6 +749,7 @@
 	  <div data-role="page" id="popPesquisaProdutoAferimento" data-theme="a">
 	  	
 	  	<div data-role="header" > 
+	 	 	<a href="#divBalancoInventario" data-role="button" data-rel="page" data-back="true" data-transition="slide">Voltar</a>
 	    	<h1>CEAM</h1> 
 	  	</div> 
 	     <div data-role="content">
@@ -708,6 +760,28 @@
     		</div>
     		
 	 	 </div> 
+	  </div>
+	  
+	  <div data-role="page" id="divSenha" data-theme="a">
+	  	
+	  	<div data-role="header"> 
+	    	<h1>CEAM</h1> 
+	  	</div> 
+	     <div data-role="content">
+			
+			<label for="basic">Senha:</label>
+  		    <input type="text" name="senha" id="senha" value=""  />
+    		
+	 	 </div> 
+	 	 <div data-role="footer">
+	 		 <div data-role="navbar">
+	 		 	<ul>
+		     		<li><a id="buttonSenha" data-role="button" data-theme="a" data-icon="check" data-inline="true" onclick="validarSenha();">Confirmar</a> </li>
+		     		<li><a href="#divBalancoInventario" id="buttonCancelarSenha" data-role="button" data-theme="a" data-icon="delete" data-inline="true">Cancelar</a> </li>
+		     	</ul>
+		     </div>
+	    </div>
+	   
 	  </div>
 	  
 
