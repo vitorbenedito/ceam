@@ -287,29 +287,21 @@
 			
 					if(value.qtdeAferida != value.quantidadeEmEstoque)
 					 {
-						$("#count_" + value.id).attr('class','ui-li-count ui-btn-up-e');
+						//$("#licount_" + value.id).attr('data-icon','alert');
+						$("#licount_" + value.id).append('<span class="ui-li-count">X</span>');
 						encontrouErro = true;
 					 }
-					else
-					{
-						$("#count_" + value.id).attr('class','ui-li-count ui-btn-up-b');
-					}
 				 }
 			}
 			
 			if(encontrouErro)
 			{
-				$('#listBalancoInventario').listview('refresh');
-				$('#footerSenha').show('slow', function() {
-				    // Animation complete.
-				  });
+				$('#listBalancoInventario').listview('refresh'); 
 				return;
 			}
 		}
 		
 		var produtosAferidos = new Array();
-		
-		var count = 0;
 		
 		for(i=0;i<itens.length;i++){
 			
@@ -318,8 +310,6 @@
 			 if(value != undefined){
 				 
 				 produtosAferidos[count] = {idProduto: value.id,qtdeAferida:value.qtdeAferida, qtdeEstoque: value.quantidadeEmEstoque};
-				 
-				 count++;
  
 			 }
 		}
@@ -334,16 +324,6 @@
 		); // Fim do POST
 		
 		$('#nomeBalanco').val("");
-		
-		for(i=0;i<itens.length;i++){
-			 var value = itens[i+1];
-			 
-			 if(value != undefined){
-				 var value = itens[i+1];
-			 	value.qtdeAferida = 0;
-			 }
-		}
-		
 		itens = new Array();
 		itemEditado = null;
 		$('#listBalancoInventario').empty();
@@ -351,9 +331,9 @@
 		if(validouSenha == true)
 		{
 			validouSenha = false;
+			$.mobile.changePage( "#divBalancoInventario", { transition: "slideup"} );
 		}
 		
-		$('#footerSenha').hide();
 		
 		alert('Registro salvo com sucesso !');
 			 
@@ -388,7 +368,7 @@
 	function excluirLinha(id)
 	{
 		
-		$("#licount_" + id).remove();
+		$("#" + id).remove();
 		itens[id] = null;
 		
 	}
@@ -396,9 +376,6 @@
 	function setarItemEditado(id)
 	{
 		itemEditado = itens[id];
-		
-		$("#h3ProdutoAferido").html(itemEditado.descricao);
-		
 		if(itemEditado != null && itemEditado.qtdeAferida != null)
 		{
 			$("#qtdeAferida").val(itemEditado.qtdeAferida);
@@ -408,16 +385,7 @@
 	function inserirQuantidadeAferida()
 	{
 		var qtde = $("#qtdeAferida").val();
-		var existeCount = $("#count_" + itemEditado.id);
-		
-		if(existeCount[0] != undefined)
-		{
-			$("#count_" + itemEditado.id).html(qtde + '');
-		}
-		else
-		{
-			$("#licount_" + itemEditado.id).append('<span class="ui-li-count" id="count_'+ itemEditado.id +'">'+qtde+'</span>');
-		}
+		$("#licount_" + itemEditado.id).append('<span class="ui-li-count">'+qtde+'</span>');
 		$("#aferirEstoque").dialog("close");
 		$('#listBalancoInventario').listview("destroy").listview();
 		itemEditado.qtdeAferida = qtde;
@@ -504,8 +472,7 @@
 		if(senha == 'vpsa')
 		{
 			validouSenha = true;
-			$('#footerSenha').hide();
-			$.mobile.changePage( "#divBalancoInventario", { transition: "slideup"} );
+			salvarBalancoInventario();
 		}
 		else
 		{
@@ -545,8 +512,6 @@
 				);
 		list.listview("destroy").listview();
 		
-		data.qtdeAferida = 0;
-		
 		itens[data.id] = data;
 		
 	}
@@ -584,8 +549,6 @@
 		this.itens = [];
 		
 		carregarProdutosVpsa();
-		
-		$('#footerSenha').hide();
 		
 		$('#buttonLocaliza').click(function() {
 			carregaLocalizacoes();
@@ -646,7 +609,15 @@
 	  </div> 
  
 	  <div data-role="content" id="content">
-	  
+			
+			<div>
+	  		<ul data-role="listview" data-count-theme="b"> 
+				<li><a href="" data-role="button" data-transition="slide">teste <span class="ui-li-count ui-btn-up-b">10</span> </a></li>
+				<li><a href="" data-role="button" data-transition="slide">teste <span class="ui-li-count ui-btn-up-c">10</span> </a></li>
+				<li><a href="" data-role="button" data-transition="slide">teste <span class="ui-li-count ui-btn-up-b">10</span> </a></li>
+			</ul>
+			</div>
+	
 	    <p><a href="#divLocalizacaoes"  data-role="button" id="buttonLocaliza" data-rel="page" data-back="true" data-transition="slide">Cadastro de Localidades</a></p>  
 	    <p><a href="#divOrganizacaoEstoque" data-role="button" id="buttonScanner" data-rel="page" data-back="true" data-transition="slide">Organizar Estoque</a></p>  
 	    <p><a href="#divBalancoInventario" data-role="button" id="buttonBalancoInventario" data-rel="page" data-back="true" data-transition="slide">Balanço de Inventário</a></p>
@@ -711,7 +682,7 @@
 		     	</ul>
 	    	</div>
 	  	</div> 
-	  		<div >
+	  	<div data-role="fieldcontain">
 				<select name=comboLocalizacao id="comboLocalizacao" data-native-menu="false">
 					
 				</select>
@@ -739,7 +710,7 @@
 		     	</ul>
 	    	</div>
 	  	</div> 
-	  		<div >
+	  	<div data-role="fieldcontain">
    				 <input type="text" name="nomeBalanco" id="nomeBalanco" value="" placeholder="Balanço de Inventário" />
 			</div>
 	     <div data-role="content">
@@ -749,14 +720,7 @@
     			</ul>
     		</div>
     		
-	 	 </div>
-	 	 <div data-role="footer" id="footerSenha">
-	 	  	<div data-role="navbar">
-	 	  		<ul>
-		     		<li><a data-role="button" data-theme="a" data-icon="delete" data-inline="true" onclick="changeValidarSenha();">Senha</a> </li>
-		     	</ul>
-		     </div>
-	    </div> 
+	 	 </div> 
 	  </div>
 	  
 	  <div data-role="page" id="aferirEstoque" data-theme="a">
@@ -765,7 +729,7 @@
 	    	<h1>CEAM</h1> 
 	  	</div> 
 	     <div data-role="content">
-			<h3 id="h3ProdutoAferido"></h3>
+			
 			<label for="basic">Quantidade Aferida:</label>
   		    <input type="text" name="qtdeAferida" id="qtdeAferida" value=""  />
     		
@@ -842,7 +806,7 @@
 	 		 <div data-role="navbar">
 	 		 	<ul>
 		     		<li><a id="buttonSenha" data-role="button" data-theme="a" data-icon="check" data-inline="true" onclick="validarSenha();">Confirmar</a> </li>
-		     		<li><a href="#divBalancoInventario" id="buttonCancelarSenha" data-role="button" data-theme="a" data-icon="alert" data-inline="true">Cancelar</a> </li>
+		     		<li><a href="#divBalancoInventario" id="buttonCancelarSenha" data-role="button" data-theme="a" data-icon="delete" data-inline="true">Cancelar</a> </li>
 		     	</ul>
 		     </div>
 	    </div>
