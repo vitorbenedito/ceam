@@ -186,7 +186,7 @@
 	  						
 	  						 var produto = produtosVpsa[valProduto.idProduto];
 	  						
-		  					 var html ='<a onclick="'+metodo+'(' + valProduto.idProduto + ');" ><b>' + produto.descricao + '</b></a> ';
+		  					 var html ='<a onclick="'+metodo+'(' + valProduto.idProduto + ');" >' + produto.descricao + '</a> ';
 		  					 
 		    				 list.append(
 		      				  $(document.createElement('li')).html(html)
@@ -753,7 +753,7 @@
 	 	 <div data-role="footer" id="footerSenha">
 	 	  	<div data-role="navbar">
 	 	  		<ul>
-		     		<li><a data-role="button" data-theme="a" data-icon="delete" data-inline="true" onclick="changeValidarSenha();">Senha</a> </li>
+		     		<li><a data-role="button" data-theme="a" data-icon="alert" data-inline="true" onclick="changeValidarSenha();">Senha</a> </li>
 		     	</ul>
 		     </div>
 	    </div> 
@@ -842,7 +842,7 @@
 	 		 <div data-role="navbar">
 	 		 	<ul>
 		     		<li><a id="buttonSenha" data-role="button" data-theme="a" data-icon="check" data-inline="true" onclick="validarSenha();">Confirmar</a> </li>
-		     		<li><a href="#divBalancoInventario" id="buttonCancelarSenha" data-role="button" data-theme="a" data-icon="alert" data-inline="true">Cancelar</a> </li>
+		     		<li><a href="#divBalancoInventario" id="buttonCancelarSenha" data-role="button" data-theme="a" data-icon="delete" data-inline="true">Cancelar</a> </li>
 		     	</ul>
 		     </div>
 	    </div>
