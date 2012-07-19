@@ -573,7 +573,7 @@
 					var html ='<a href="#aferirEstoque" onclick="setarItemEditado('+produto.id+')" data-rel="dialog" data-transition="pop">' + produto.descricao + '</a> ';
 					html += '<a onclick="excluirLinha( '+ produto.id +' );">Excluir</a>';
 					list.append(
-								   $(document.createElement('li')).attr('id','licount_'+data.id).html( html )
+								   $(document.createElement('li')).attr('id','licount_'+produto.id).html( html )
 							);
 			
 					itens[produto.id] = produto;
