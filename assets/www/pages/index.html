@@ -144,7 +144,7 @@
 		if( produtosVpsa == null || produtosVpsa.length == 0 )
 		{
 		
-			$.getJSON( urlVpsa + '/produtos', 
+			$.getJSON( urlCeamWeb + '/produtos.json', 
 		  			function(data) {
 		  				$.each(data, function(key, val) {
 		  					produtosVpsa[val.id] = val;
