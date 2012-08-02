@@ -8,32 +8,20 @@
 
 package com.phonegap.plugins.barcodescanner;
 
+import org.apache.cordova.api.Plugin;
+import org.apache.cordova.api.PluginResult;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
-import android.util.Log;
-
-import org.apache.cordova.api.Plugin;
-import org.apache.cordova.api.PluginResult;
 
 /**
  * This calls out to the ZXing barcode reader and returns the result.
  */
-public class BarcodeScanner extends Plugin {
-    private static final String SCAN = "scan";
-    private static final String ENCODE = "encode";
-    private static final String CANCELLED = "cancelled";
-    private static final String FORMAT = "format";
-    private static final String TEXT = "text";
-    private static final String DATA = "data";
-    private static final String TYPE = "type";
-    private static final String SCAN_INTENT = "com.phonegap.plugins.barcodescanner.SCAN";
-    private static final String ENCODE_DATA = "ENCODE_DATA";
-    private static final String ENCODE_TYPE = "ENCODE_TYPE";
-    private static final String ENCODE_INTENT = "com.phonegap.plugins.barcodescanner.ENCODE";
+public class BarcodeScannerOld extends Plugin {
     private static final String TEXT_TYPE = "TEXT_TYPE";
     private static final String EMAIL_TYPE = "EMAIL_TYPE";
     private static final String PHONE_TYPE = "PHONE_TYPE";
@@ -46,7 +34,7 @@ public class BarcodeScanner extends Plugin {
     /**
      * Constructor.
      */
-    public BarcodeScanner() {
+    public BarcodeScannerOld() {
     }
 
     /**
@@ -60,27 +48,27 @@ public class BarcodeScanner extends Plugin {
     public PluginResult execute(String action, JSONArray args, String callbackId) {
         this.callback = callbackId;
 
-        if (action.equals(ENCODE)) {
+        if (action.equals("encode")) {
             JSONObject obj = args.optJSONObject(0);
             if (obj != null) {
-                String type = obj.optString(TYPE);
-                String data = obj.optString(DATA);
-
+                String type = obj.optString("type");
+                String data = obj.optString("data");
+                
                 // If the type is null then force the type to text
                 if (type == null) {
                     type = TEXT_TYPE;
                 }
-
+                
                 if (data == null) {
-                    return new PluginResult(PluginResult.Status.ERROR, "User did not specify data to encode");
+                    return new PluginResult(PluginResult.Status.ERROR, "User did not specify data to encode");                                            
                 }
-
-                encode(type, data);
+                
+                encode(type, data);                    
             } else {
-                return new PluginResult(PluginResult.Status.ERROR, "User did not specify data to encode");
+                return new PluginResult(PluginResult.Status.ERROR, "User did not specify data to encode");                    
             }
         }
-        else if (action.equals(SCAN)) {
+        else if (action.equals("scan")) {
             scan();
         } else {
             return new PluginResult(PluginResult.Status.INVALID_ACTION);
@@ -95,10 +83,16 @@ public class BarcodeScanner extends Plugin {
      * Starts an intent to scan and decode a barcode.
      */
     public void scan() {
-        Intent intentScan = new Intent(SCAN_INTENT);
-        intentScan.addCategory(Intent.CATEGORY_DEFAULT);
-
-        this.cordova.startActivityForResult((Plugin) this, intentScan, REQUEST_CODE);
+    	Intent intent = new Intent("com.google.zxing.client.android.SCAN");
+    	intent.addCategory(Intent.CATEGORY_DEFAULT);
+    	
+        try
+        {
+        	this.ctx.startActivityForResult((Plugin) this, intent, REQUEST_CODE);
+        }catch(Exception ex)
+        {
+        	ex.printStackTrace();
+        }
     }
 
     /**
@@ -114,9 +108,9 @@ public class BarcodeScanner extends Plugin {
             if (resultCode == Activity.RESULT_OK) {
                 JSONObject obj = new JSONObject();
                 try {
-                    obj.put(TEXT, intent.getStringExtra("SCAN_RESULT"));
-                    obj.put(FORMAT, intent.getStringExtra("SCAN_RESULT_FORMAT"));
-                    obj.put(CANCELLED, false);
+                    obj.put("text", intent.getStringExtra("SCAN_RESULT"));
+                    obj.put("format", intent.getStringExtra("SCAN_RESULT_FORMAT"));
+                    obj.put("cancelled", false);
                 } catch(JSONException e) {
                     //Log.d(LOG_TAG, "This should never happen");
                 }
@@ -124,9 +118,9 @@ public class BarcodeScanner extends Plugin {
             } if (resultCode == Activity.RESULT_CANCELED) {
                 JSONObject obj = new JSONObject();
                 try {
-                    obj.put(TEXT, "");
-                    obj.put(FORMAT, "");
-                    obj.put(CANCELLED, true);
+                    obj.put("text", "");
+                    obj.put("format", "");
+                    obj.put("cancelled", true);
                 } catch(JSONException e) {
                     //Log.d(LOG_TAG, "This should never happen");
                 }
@@ -138,15 +132,15 @@ public class BarcodeScanner extends Plugin {
     }
 
     /**
-     * Initiates a barcode encode.
+     * Initiates a barcode encode. 
      * @param data  The data to encode in the bar code
-     * @param data2
+     * @param data2 
      */
     public void encode(String type, String data) {
-        Intent intentEncode = new Intent(ENCODE_INTENT);
-        intentEncode.putExtra(ENCODE_TYPE, type);
-        intentEncode.putExtra(ENCODE_DATA, data);
-
-        this.cordova.getActivity().startActivity(intentEncode);
+        Intent intentEncode = new Intent("com.phonegap.plugins.barcodescanner.ENCODE");
+        intentEncode.putExtra("ENCODE_TYPE", type);
+        intentEncode.putExtra("ENCODE_DATA", data);
+        
+        this.ctx.startActivity(intentEncode);
     }
 }

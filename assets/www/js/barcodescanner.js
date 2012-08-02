@@ -54,6 +54,10 @@ BarcodeScanner.prototype.encode = function(type, data, successCallback, errorCal
 };
 
 //-------------------------------------------------------------------
-cordova.addConstructor(function() {
-    cordova.addPlugin('barcodeScanner', new BarcodeScanner());
-});
+
+if(!window.plugins) {
+    window.plugins = {};
+}
+if (!window.plugins.barcodeScanner) {
+    window.plugins.barcodeScanner = new BarcodeScanner();
+}
