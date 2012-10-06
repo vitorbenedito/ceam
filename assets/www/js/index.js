@@ -9,6 +9,8 @@
 	
 	var produtosVpsa = new Array();
 	
+	var entidadesVpsa = new Array();
+	
 	var carregouProdutosOrganizacao = false;
 	
 	var carregouProdutosAferimento = false;
@@ -17,9 +19,17 @@
 	
 	var urlCeamWeb = "http://ceam.herokuapp.com/";
 	
-	var urlVpsa = "https://www.vpsa.com.br/estoque/rest/externo/showroom/93/"; 
+	var urlVpsa = "https://www.vpsa.com.br/apps/api/"; 
 	
 	var validouSenha = false;
+	
+	var APP_ID = "50532b96d93a4b7a7c000002"
+	var APP_SECRET = "9b5211aabfe615db0c35d6e2a25e33a39aea0991fc44b3760926cdb97ad651f3"
+	var VPSA_AUTHORIZATION_URL = "https://www.vpsa.com.br/apps/oauth/authorization"
+	var VPSA_TOKEN_URL = "https://www.vpsa.com.br/apps/oauth/token"
+	var VPSA_REDIRECT_URI = "http://localhost:3000/oauth/callback"
+		
+	var token = null;
 	
 	//var urlCeamWeb = "http://10.0.2.2:3000/";
 	
@@ -27,9 +37,38 @@
 	 ACTIONS
 	 **********************************************************/
 	
-	$( function() {
+	$(document).ready(validaToken);
+	
+	function url_vpsa( api_vpsa,entidades )
+	{
+		return urlVpsa + api_vpsa + '?token=' + this.token + '&entidades=' + entidades;
+	}
+	
+	function url_vpsa( api_vpsa )
+	{
+		return urlVpsa + api_vpsa + '?token=' + this.token;
+	}
+	
+	function validaToken()
+	{
+		if(token == null)
+		{
+			$.mobile.changePage( "#login", { transition: "slideup"} );
+			return;
+		}
+		else
+		{
+			executarComandos();
+		}
+	}
+
+	
+	function executarComandos()
+	{
 		
 		this.itens = [];
+		
+		carregarEntidadesVpsa();
 		
 		carregarProdutosVpsa();
 		
@@ -79,11 +118,56 @@
 			$("#aferirEstoque").dialog("close");
 		});
 		
+		$.mobile.changePage( "#home", { transition: "slideup"} );
+	}
+	
+	function logar()
+	{
 		
-	} );
+		 var childBrowser = window.plugins.childBrowser;
+		
+		 childBrowser.showWebPage(VPSA_AUTHORIZATION_URL + '?response_type=code&app_id='+APP_ID+'&redirect_uri='+VPSA_REDIRECT_URI, { showLocationBar: false });
+		
+		childBrowser.onLocationChange = function(loc) {
+	        if (loc.indexOf('callback?code=') > -1) {
+	           
+	            var code = loc.substr( loc.indexOf('code=') + 5, loc.length - 1);
+
+	            getAccessToken(code);
+	        }
+	    };
+	}
+	
+	function getAccessToken(code) {
+		
+		var json = JSON.stringify( {grant_type: "authorization_code",app_id: APP_ID, app_secret:APP_SECRET,redirect_uri:VPSA_REDIRECT_URI,code:code});
+		
+		var request = $.ajax({
+			  type: "POST",
+			  url: VPSA_TOKEN_URL,
+			  data: json,
+			  contentType: "application/json"
+			});
+		
+		request.done(function(data) {
+			  registrarToken(data);
+			});
+
+			request.fail(function(jqXHR, textStatus) {
+			  alert(textStatus);
+			});
+
+	}
+	
+	function registrarToken(data)
+	{
+		window.plugins.childBrowser.close();
+		token = data['access_token'];
+		executarComandos();
+	}
 	
 	/**********************************************************
-	 CARREGA PRODUTOS VPSA
+	 CARREGA DADOS DO VPSA
 	 **********************************************************/
 	
 	function carregarProdutosVpsa()
@@ -92,7 +176,7 @@
 		if( produtosVpsa == null || produtosVpsa.length == 0 )
 		{
 		
-			$.getJSON( urlCeamWeb + '/produtos.json', 
+			$.getJSON( urlCeamWeb + 'produtos.json', 
 		  			function(data) {
 		  				$.each(data, function(key, val) {
 		  					produtosVpsa[val.id] = val;
@@ -101,6 +185,39 @@
 			});
 		}
 		
+	}
+	
+	function carregarEntidadesVpsa()
+	{
+		
+		if( entidadesVpsa == null || entidadesVpsa.length == 0 )
+		{
+			
+			$.getJSON( url_vpsa( 'entidades' ), 
+		  			function(data) {
+				
+						var combo = $('#comboEntidades');
+						combo.html('');
+						var combos = "";
+				
+		  				$.each(data, function(key, val) {
+		  					
+		  					entidadesVpsa[val.id] = val;
+
+		  			        combos = combos + "<option value='" + val.id + "' >" + val.nome + "</option>"; 
+		  					
+		  				});
+		  				
+		  				combo.append(combos);
+	  			        combo.selectmenu('refresh');
+			});
+		}
+		
+	}
+	
+	function getEntidadeSelecionada()
+	{
+		return $('#comboLocalizacao').val();
 	}
 	
 	/**********************************************************
@@ -182,7 +299,7 @@
 		
 		 if(desc == '')
 		 {
-			alert('Informe um nome para a localiza&ccedil;&atilde;o');
+			alert('Informe um nome para a localização');
 			return;
 		 }
 	
@@ -269,13 +386,13 @@
 		
 		if(data == null || data == undefined || data.id == null)
 		{
-			alert('Produto n&atilde;o encontrado.');
+			alert('Produto não encontrado.');
 			return;
 		}
 					
 		if(itens[data.id] != null)
 		{
-			alert('Produto j&aacute; inserido.');
+			alert('Produto já inserido.');
 			return;
 		}
 					
@@ -337,13 +454,13 @@
 						
 		if(data == null || data == undefined || data.id == null)
 		{
-			alert('Produto n&atilde;o encontrado.');
+			alert('Produto não encontrado.');
 			return;
 		}
 						
 		if(itens[data.id] != null)
 		{
-			alert('Produto j&aacute; inserido.');
+			alert('Produto já inserido.');
 			return;
 		}
 						
@@ -412,7 +529,7 @@
 		
 		if(nomeBalanco == '')
 		{
-			alert("Informe um nome para o balan&ccedil;o de invent&aacute;rio");	
+			alert("Informe um nome para o balanço de inventário");	
 			return;
 		}
 		
